@@ -21,14 +21,78 @@ def find_best_move(board):
     # TODO:
     # Build a heuristic agent on your own that is much better than the random agent.
     # Your own agent don't have to beat the game.
+
     # bestmove = find_best_move_random_agent()
     # bestmove = find_best_move_check(board)
     bestmove = best_merge_score(board)
+    # bestmove = mega2(board)
+
     return bestmove
+
+
+def mega2(board):
+    moves = get_valid_moves(board)
+    maxScore = -np.inf
+    bestmove = -1
+
+    next_board_state_list = get_next_moves(board)
+
+    for move in moves:
+        next_board_state = next_board_state_list[move]
+        next_move = best_merge_score(next_board_state)
+        score = np.sum(get_next_moves(next_board_state)[next_move])
+
+        if score >= maxScore:
+            maxScore = score
+            bestmove = move
+
+    return bestmove
+
+
+def mega(board):
+    moves = get_valid_moves(board)
+    maxScore = -np.inf
+    bestmove = -1
+
+    next_board_state = get_next_moves(board)
+
+    for move in moves:
+        score = np.sum(next_board_state[move])
+
+        if score >= maxScore:
+            maxScore = score
+            bestmove = move
+
+    return bestmove
+
+
+def get_next_moves(board):
+    return {
+        DOWN: game.merge_down(board),
+        UP: game.merge_up(board),
+        LEFT: game.merge_left(board),
+        RIGHT: game.merge_right(board)
+    }
 
 
 def find_best_move_random_agent():
     return random.choice([UP, DOWN, LEFT, RIGHT])
+
+
+def get_highest_value_position(board):
+    highest_value = 0
+    x_pos = 0
+    y_pos = 0
+
+    for x in range(4):
+        for y in range(4):
+            if highest_value < board[x][y]:
+                x_pos = x
+                y_pos = y
+                highest_value = board[x][y]
+
+    print(highest_value)
+    return x_pos, y_pos
 
 
 def best_merge_score(board):
@@ -40,14 +104,14 @@ def best_merge_score(board):
     }
 
     valid_moves = get_valid_moves(board)
-    # print(valid_moves)
+
     if min(score, key=score.get) in valid_moves:
         return min(score, key=score.get)
     else:
-        return find_best_move_check(board,valid_moves)
+        return find_best_move_check(board, valid_moves)
 
 
-def find_best_move_check(board,valid_moves):
+def find_best_move_check(board, valid_moves):
     moves = valid_moves
 
     if UP in moves:
@@ -63,7 +127,7 @@ def find_best_move_check(board,valid_moves):
                 return LEFT
         return LEFT
 
-    return DOWN
+    return mega(board)
 
 
 def get_valid_moves(board):

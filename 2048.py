@@ -124,15 +124,19 @@ def main(argv):
 
     score_list = []
     high_score = 0
-    for i in range(40):
+    sum_tile = 0
+    iterations = 50
+    for i in range(iterations):
         game = play_game(gamectrl)
         score_list.append(game)
         if high_score < game.final_score:
             high_score = game.final_score
         gamectrl.restart_game()
     for score in score_list:
+        sum_tile = sum_tile + score.maxval
         print("Score %d; highest tile %d." % (score.final_score, score.maxval))
     print("Final score %d" % high_score)
+    print("Avg Tile %d" % (sum_tile / iterations))
 
 
 class Scores:

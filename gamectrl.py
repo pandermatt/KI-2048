@@ -170,9 +170,9 @@ class Keyboard2048Control(Generic2048Control):
     def execute_move(self, move):
         key = [38, 40, 37, 39][move]
         self.send_key_event('keydown', key)
-        time.sleep(0.01)
+        # time.sleep(0.01)
         self.send_key_event('keyup', key)
-        time.sleep(0.05)
+        # time.sleep(0.05)
 
 class Hybrid2048Control(Fast2048Control, Keyboard2048Control):
     ''' Control 2048 by hooking the GameManager and using keyboard inputs.
