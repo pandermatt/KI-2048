@@ -8,14 +8,16 @@
 #              This Script initialize the AI and controls the game flow.
 
 
-#from __future__ import print_function
+# from __future__ import print_function
 
 import time
 
-import heuristicai as ai #for task 4
-#import searchai as ai #for task 5
-#import heuristicai_SOLUTION as ai #for task 4
-#import searchai_SOLUTION as ai #for task 5
+import heuristicai as ai  # for task 4
+
+
+# import searchai as ai #for task 5
+# import heuristicai_SOLUTION as ai #for task 4
+# import searchai_SOLUTION as ai #for task 5
 
 def print_board(m):
     for row in m:
@@ -23,26 +25,33 @@ def print_board(m):
             print('%8d' % c, end=' ')
         print()
 
+
 def _to_val(c):
     if c == 0: return 0
     return c
 
+
 def to_val(m):
     return [[_to_val(c) for c in row] for row in m]
+
 
 def _to_score(c):
     if c <= 1:
         return 0
-    return (c-1) * (2**c)
+    return (c - 1) * (2 ** c)
+
 
 def to_score(m):
     return [[_to_score(c) for c in row] for row in m]
 
+
 def find_best_move(board):
     return ai.find_best_move(board)
 
+
 def movename(move):
     return ['up', 'down', 'left', 'right'][move]
+
 
 def play_game(gamectrl):
     moveno = 0
@@ -67,16 +76,24 @@ def play_game(gamectrl):
     board = gamectrl.get_board()
     maxval = max(max(row) for row in to_val(board))
     print("Game over. Final score %d; highest tile %d." % (score, maxval))
+    return Scores(score, maxval)
+
 
 def parse_args(argv):
     import argparse
 
     parser = argparse.ArgumentParser(description="Use the AI to play 2048 via browser control")
-    parser.add_argument('-p', '--port', help="Port number to control on (default: 32000 for Firefox, 9222 for Chrome)", type=int)
-    parser.add_argument('-b', '--browser', help="Browser you're using. Only Firefox with the Remote Control extension, and Chrome with remote debugging (default), are supported right now.", default='chrome', choices=('firefox', 'chrome'))
-    parser.add_argument('-k', '--ctrlmode', help="Control mode to use. If the browser control doesn't seem to work, try changing this.", default='hybrid', choices=('keyboard', 'fast', 'hybrid'))
+    parser.add_argument('-p', '--port', help="Port number to control on (default: 32000 for Firefox, 9222 for Chrome)",
+                        type=int)
+    parser.add_argument('-b', '--browser',
+                        help="Browser you're using. Only Firefox with the Remote Control extension, and Chrome with remote debugging (default), are supported right now.",
+                        default='chrome', choices=('firefox', 'chrome'))
+    parser.add_argument('-k', '--ctrlmode',
+                        help="Control mode to use. If the browser control doesn't seem to work, try changing this.",
+                        default='hybrid', choices=('keyboard', 'fast', 'hybrid'))
 
     return parser.parse_args(argv)
+
 
 def main(argv):
     args = parse_args(argv)
@@ -105,8 +122,26 @@ def main(argv):
     if gamectrl.get_status() == 'ended':
         gamectrl.restart_game()
 
-    play_game(gamectrl)
+    score_list = []
+    high_score = 0
+    for i in range(40):
+        game = play_game(gamectrl)
+        score_list.append(game)
+        if high_score < game.final_score:
+            high_score = game.final_score
+        gamectrl.restart_game()
+    for score in score_list:
+        print("Score %d; highest tile %d." % (score.final_score, score.maxval))
+    print("Final score %d" % high_score)
+
+
+class Scores:
+    def __init__(self, final_score, maxval):
+        self.final_score = final_score
+        self.maxval = maxval
+
 
 if __name__ == '__main__':
     import sys
+
     exit(main(sys.argv[1:]))
