@@ -15,6 +15,7 @@ stuck_counter = 0
 
 FACTOR_EMPTY_FIELDS = 0.05
 FACTOR_BORDER = 0.10
+FACTOR_BORDER_ROW = 0.02
 
 
 # [[8, 32, 16, 8],
@@ -37,6 +38,7 @@ def find_best_move_with_rating(board):
     rating_methods = [
         validate_empty_fields,
         validate_place_biggest_number,
+        validate_end_row,
         validate_possible_move
     ]
 
@@ -47,16 +49,16 @@ def find_best_move_with_rating(board):
     return rating.index(max(rating))
 
 
+def merge_rating(main, merge):
+    return [x + y for x, y in zip(main, merge)]
+
+
 def validate_possible_move(board):
     rating = [0, 0, 0, 0]
     for i in range(4):
         if board_equals(board, execute_move(i, board)):
             rating[i] = -np.Inf
     return rating
-
-
-def merge_rating(main, merge):
-    return [x + y for x, y in zip(main, merge)]
 
 
 def validate_empty_fields(board):
@@ -70,7 +72,6 @@ def validate_empty_fields(board):
 
 def validate_place_biggest_number(board):
     np_board = np.array(board)
-    rating = [0, 0, 0, 0]
 
     # UP, DOWN, LEFT, RIGHT
     return FACTOR_BORDER * np.array([
@@ -78,6 +79,18 @@ def validate_place_biggest_number(board):
         np_board[3, np.argmax(np_board[3, :])],
         np_board[np.argmax(np_board[:, 0]), 0],
         np_board[np.argmax(np_board[:, 3]), 3]
+    ])
+
+
+def validate_end_row(board):
+    np_board = np.array(board)
+
+    # UP, DOWN, LEFT, RIGHT
+    return FACTOR_BORDER_ROW * np.array([
+        sum(np_board[0, :]),
+        sum(np_board[3, :]),
+        sum(np_board[:, 0]),
+        sum(np_board[:, 3])
     ])
 
 
