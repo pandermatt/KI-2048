@@ -4,7 +4,6 @@ import sys
 import numpy as np
 
 import game
-
 # Author:				chrn (original by nneonneo)
 # Date:				11.11.2016
 # Description:			The logic of the AI to beat the game.
