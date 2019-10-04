@@ -14,7 +14,6 @@ import time
 
 import heuristicai_better as ai  # for task 4
 
-
 # import searchai as ai #for task 5
 # import heuristicai_SOLUTION as ai #for task 4
 # import searchai_SOLUTION as ai #for task 5
@@ -125,6 +124,7 @@ def main(argv):
     score_list = []
     high_score = 0
     sum_tile = 0
+    sum_score = 0
     iterations = 50
     for i in range(iterations):
         game = play_game(gamectrl)
@@ -134,8 +134,10 @@ def main(argv):
         gamectrl.restart_game()
     for score in score_list:
         sum_tile = sum_tile + score.maxval
+        sum_score = sum_score + score.final_score
         print("Score %d; highest tile %d." % (score.final_score, score.maxval))
     print("Final score %d" % high_score)
+    print("Avg score %d" % (sum_score / iterations))
     print("Avg Tile %d" % (sum_tile / iterations))
 
 

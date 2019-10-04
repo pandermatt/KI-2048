@@ -17,8 +17,9 @@ FACTOR_EMPTY_FIELDS = 3
 FACTOR_BORDER = 0.8
 FACTOR_BORDER_ROW = 0.5
 FACTOR_MERGE_SCORE = 0.9
-FACTOR_MERGE_SCORE_2X = 1.5
-FACTOR_MERGE_SCORE_3X = 0.8
+FACTOR_MERGE_SCORE_2X = 0.8
+FACTOR_MERGE_SCORE_3X = 0.7
+FACTOR_NEIGHBOURS = 1.5
 
 
 # [[8, 32, 16, 8],
@@ -41,6 +42,9 @@ def find_best_move_with_rating(board):
     rating_methods = [
         validate_top_row,
         validate_merge_top_row,
+        validate_merge_second_row,
+        validate_merge_third_row_row,
+        validate_neighbour,
         validate_empty_fields,
         validate_new_board,
         validate_place_biggest_number,
@@ -63,17 +67,59 @@ def merge_rating(main, merge):
 
 
 def validate_new_board(board):
-    if np.max(board) < 64:
+    if np.max(board) < 128:
         # UP, DOWN, LEFT, RIGHT
-        return [2, 0, 1, 0]
+        return [4, -1, 1, -1]
     return [0, 0, 0, 0]
 
 
 def validate_top_row(board):
-    if not is_top_row_full(board):
+    if not is_n_row_full(board, 0):
         # UP, DOWN, LEFT, RIGHT
-        return [4, -5, 2, -3]
+        return [2, -10, 1, -5]
     return [0, -5, 0, 0]
+
+
+def check_neighbour(board, x, y, good_merge):
+    value = board[x][y]
+    if value >= good_merge:
+        # UP, DOWN, LEFT, RIGHT
+        try:
+            if value == board[x + 1][y]:
+                return [0, 0, 6, 0]
+        except:
+            pass
+        try:
+            if value == board[x + 1][y + 1]:
+                return [2, 0, 4, 0]
+        except:
+            pass
+        try:
+            if value == board[x][y + 1]:
+                return [4, 0, 0, 0]
+        except:
+            pass
+        try:
+            if value == board[x - 1][y + 1]:
+                return [2, 0, 0, 3]
+        except:
+            pass
+        try:
+            if value == board[x - 1][y]:
+                return [0, 0, 0, 4]
+        except:
+            pass
+        return [0, 0, 0, 0]
+    else:
+        return [0, 0, 0, 0]
+
+
+def validate_neighbour(board):
+    good_merge = np.max(board) / 8
+    rating = np.array([0, 0, 0, 0])
+    for x in range(4):
+        rating = merge_rating(rating, check_neighbour(board, 0, x, good_merge))
+    return rank_score(rating, total=FACTOR_NEIGHBOURS)
 
 
 def validate_merge_top_row(board):
@@ -83,8 +129,23 @@ def validate_merge_top_row(board):
     return [0, 0, 0, 0]
 
 
-def is_top_row_full(board):
-    return np.count_nonzero(board[0]) == 4
+def validate_merge_second_row(board):
+    if np.count_nonzero(execute_move(LEFT, board)[1]) < np.count_nonzero(board[1]):
+        # UP, DOWN, LEFT, RIGHT
+        return [0, 0, 0, 2]
+    return [0, 0, 0, 0]
+
+
+def validate_merge_third_row_row(board):
+    if is_n_row_full(board, 0) and is_n_row_full(board, 1) and \
+            np.count_nonzero(execute_move(LEFT, board)[1]) < np.count_nonzero(board[1]):
+        # UP, DOWN, LEFT, RIGHT
+        return [0, 0, 2, 0]
+    return [0, 0, 0, 0]
+
+
+def is_n_row_full(board, n):
+    return np.count_nonzero(board[n]) == 4
 
 
 def validate_possible_move(board):
@@ -210,7 +271,7 @@ def validate_end_row(board):
     ])
 
 
-def rank_score(array, total=1):
+def rank_score(array, total=1.0):
     rank_array_indexes = [0, 0, 0, 0]
     sorted_array = array.copy()
     sorted_array.sort()
