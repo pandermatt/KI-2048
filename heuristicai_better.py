@@ -13,13 +13,15 @@ previous_board = None
 next_move = None
 stuck_counter = 0
 
-FACTOR_EMPTY_FIELDS = 3
+FACTOR_EMPTY_FIELDS = 5
 FACTOR_BORDER = 0.8
 FACTOR_BORDER_ROW = 0.5
 FACTOR_MERGE_SCORE = 0.9
 FACTOR_MERGE_SCORE_2X = 0.8
 FACTOR_MERGE_SCORE_3X = 0.7
-FACTOR_NEIGHBOURS = 1.5
+FACTOR_NEIGHBOURS = 4
+FACTOR_EMPTY_CORNER = 4
+FACTOR_STAY_FULL = 10
 
 
 # [[8, 32, 16, 8],
@@ -43,7 +45,8 @@ def find_best_move_with_rating(board):
         validate_top_row,
         validate_merge_top_row,
         validate_merge_second_row,
-        validate_merge_third_row_row,
+        # validate_merge_third_row_row,
+        validate_empty_corner,
         validate_neighbour,
         validate_empty_fields,
         validate_new_board,
@@ -52,18 +55,59 @@ def find_best_move_with_rating(board):
         validate_merge_score,
         validate_merge_score2x,
         validate_merge_score3x,
+        validate_rescue_mode,
+        validate_merge_right_up,
         validate_possible_move
     ]
 
     for rating_method in rating_methods:
         add_rating = rating_method(board)
+
+        # import csv
+        # file = r'' + str(rating_method) + '.csv'
+        # with open(file, 'a') as f:
+        #     writer = csv.writer(f)
+        #     writer.writerow(add_rating)
+
         rating = merge_rating(rating, add_rating)
+
+    if np.count_nonzero(board) > 12:
+        print(rating)
+    if rating.index(max(rating)) == 3:
+        print(rating)
+        print(rating)
 
     return rating.index(max(rating))
 
 
 def merge_rating(main, merge):
     return [x + y for x, y in zip(main, merge)]
+
+
+def validate_merge_right_up(board):
+    rating = [0, 0, 0, 0]
+    occupied = np.count_nonzero(board[1])
+    if not is_n_row_full(board, 0):
+        return rating
+
+    new_board = execute_move(UP, execute_move(RIGHT, board))
+
+    if np.count_nonzero(new_board[1]) < occupied and is_n_row_full(new_board, 0):
+        return [0, 0, 0, 15]
+    else:
+        return rating
+
+
+def validate_rescue_mode(board):
+    if board[0][0] == 0:
+        return [0, 0, 5, 0]
+    if board[0][0] * board[0][0] < np.max(board):
+        for i in range(1, 3):
+            if board[i][0] in [2, 4, 8]:
+                return [5, 0, 0, 5]
+        return [10, 0, 0, 0]
+    else:
+        return [0, 0, 0, 0]
 
 
 def validate_new_board(board):
@@ -125,15 +169,34 @@ def validate_neighbour(board):
 def validate_merge_top_row(board):
     if np.count_nonzero(execute_move(LEFT, board)[0]) < np.count_nonzero(board[0]):
         # UP, DOWN, LEFT, RIGHT
-        return [0, 0, 2, 0]
+        return [0, 0, 5, 0]
     return [0, 0, 0, 0]
+
+
+def validate_top_row_stay_full(board):
+    rating = [0, 0, 0, 0]
+    for i in range(4):
+        new_board = execute_move(i, board)
+        if np.count_nonzero(new_board[0]) == 4:
+            rating[i] = FACTOR_STAY_FULL
+    return rating
 
 
 def validate_merge_second_row(board):
-    if np.count_nonzero(execute_move(LEFT, board)[1]) < np.count_nonzero(board[1]):
-        # UP, DOWN, LEFT, RIGHT
-        return [0, 0, 0, 2]
-    return [0, 0, 0, 0]
+    rating = [0, 0, 0, 0]
+    occupied = np.count_nonzero(board)
+    if not is_n_row_full(board, 0):
+        return rating
+    for i in range(4):
+        new_board = execute_move(i, board)
+        rating[i] = occupied - np.count_nonzero(new_board)
+        for j in range(4):
+            new2_board = execute_move(i, new_board)
+            rating[i] = occupied - np.count_nonzero(new2_board)
+            for k in range(4):
+                new3_board = execute_move(i, new2_board)
+                rating[i] = occupied - np.count_nonzero(new3_board)
+    return rank_score(rating, total=5)
 
 
 def validate_merge_third_row_row(board):
@@ -269,6 +332,14 @@ def validate_end_row(board):
         sum(np_board[:, 0]),
         sum(np_board[:, 3])
     ])
+
+
+def validate_empty_corner(board):
+    rating = [0, 0, 0, 0]
+    for i in range(4):
+        if execute_move(i, board)[0][0] == 0:
+            rating[i] = 1 * FACTOR_EMPTY_CORNER
+    return rating
 
 
 def rank_score(array, total=1.0):
