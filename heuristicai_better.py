@@ -64,7 +64,7 @@ def find_best_move_with_rating(board):
         add_rating = rating_method(board)
 
         # import csv
-        # file = r'' + str(rating_method) + '.csv'
+        # file = r'' + rating_method.__name__ + '.csv'
         # with open(file, 'a') as f:
         #     writer = csv.writer(f)
         #     writer.writerow(add_rating)
@@ -332,7 +332,7 @@ def validate_end_row(board):
 def validate_empty_corner(board):
     rating = [0, 0, 0, 0]
     for i in range(4):
-        if execute_move(i, board)[0][0] == 0:
+        if execute_move(i, board)[3][3] == 0:
             rating[i] = 1 * FACTOR_EMPTY_CORNER
     return rating
 
