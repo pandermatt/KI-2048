@@ -71,12 +71,6 @@ def find_best_move_with_rating(board):
 
         rating = merge_rating(rating, add_rating)
 
-    if np.count_nonzero(board) > 12:
-        print(rating)
-    if rating.index(max(rating)) == 3:
-        print(rating)
-        print(rating)
-
     return rating.index(max(rating))
 
 
