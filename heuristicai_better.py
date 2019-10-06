@@ -13,15 +13,15 @@ previous_board = None
 next_move = None
 stuck_counter = 0
 
-FACTOR_EMPTY_FIELDS = 5
-FACTOR_BORDER = 0.8
-FACTOR_BORDER_ROW = 0.5
+FACTOR_EMPTY_FIELDS = 7
+FACTOR_BORDER = 6
+FACTOR_BORDER_ROW = 5
 FACTOR_MERGE_SCORE = 0.9
 FACTOR_MERGE_SCORE_2X = 0.8
 FACTOR_MERGE_SCORE_3X = 0.7
 FACTOR_NEIGHBOURS = 4
 FACTOR_EMPTY_CORNER = 4
-FACTOR_STAY_FULL = 10
+FACTOR_STAY_FULL = 100
 
 
 # [[8, 32, 16, 8],
@@ -68,9 +68,10 @@ def find_best_move_with_rating(board):
         # with open(file, 'a') as f:
         #     writer = csv.writer(f)
         #     writer.writerow(add_rating)
-
         rating = merge_rating(rating, add_rating)
 
+    if rating.index(max(rating)) == 3:
+        print(rating)
     return rating.index(max(rating))
 
 
@@ -87,7 +88,7 @@ def validate_merge_right_up(board):
     new_board = execute_move(UP, execute_move(RIGHT, board))
 
     if np.count_nonzero(new_board[1]) < occupied and is_n_row_full(new_board, 0):
-        return [0, 0, 0, 15]
+        return [5, 0, 0, 10]
     else:
         return rating
 
@@ -98,7 +99,7 @@ def validate_rescue_mode(board):
     if board[0][0] * board[0][0] < np.max(board):
         for i in range(1, 3):
             if board[i][0] in [2, 4, 8]:
-                return [5, 0, 0, 5]
+                return [5, 0, 0, 3]
         return [10, 0, 0, 0]
     else:
         return [0, 0, 0, 0]
@@ -115,7 +116,7 @@ def validate_top_row(board):
     if not is_n_row_full(board, 0):
         # UP, DOWN, LEFT, RIGHT
         return [2, -10, 1, -5]
-    return [0, -5, 0, 0]
+    return [0, -5, 0, -1]
 
 
 def check_neighbour(board, x, y, good_merge):
@@ -163,7 +164,7 @@ def validate_neighbour(board):
 def validate_merge_top_row(board):
     if np.count_nonzero(execute_move(LEFT, board)[0]) < np.count_nonzero(board[0]):
         # UP, DOWN, LEFT, RIGHT
-        return [0, 0, 5, 0]
+        return [0, 0, 10, 0]
     return [0, 0, 0, 0]
 
 
@@ -296,36 +297,36 @@ def validate_merge_score3x(board):
 
 
 def validate_empty_fields(board):
-    return FACTOR_EMPTY_FIELDS * rank_score((16 - np.array([
+    return rank_score((16 - np.array([
         np.count_nonzero(execute_move(UP, board)),
         np.count_nonzero(execute_move(DOWN, board)),
         np.count_nonzero(execute_move(LEFT, board)),
         np.count_nonzero(execute_move(RIGHT, board))
-    ])).tolist())
+    ])).tolist(), total=FACTOR_EMPTY_FIELDS)
 
 
 def validate_place_biggest_number(board):
     np_board = np.array(board)
 
     # UP, DOWN, LEFT, RIGHT
-    return FACTOR_BORDER * rank_score([
+    return rank_score([
         np_board[0, np.argmax(np_board[0, :])],
         np_board[3, np.argmax(np_board[3, :])],
         np_board[np.argmax(np_board[:, 0]), 0],
         np_board[np.argmax(np_board[:, 3]), 3]
-    ])
+    ], total=FACTOR_BORDER)
 
 
 def validate_end_row(board):
     np_board = np.array(board)
 
     # UP, DOWN, LEFT, RIGHT
-    return FACTOR_BORDER_ROW * rank_score([
+    return rank_score([
         sum(np_board[0, :]),
         sum(np_board[3, :]),
         sum(np_board[:, 0]),
         sum(np_board[:, 3])
-    ])
+    ], total=FACTOR_BORDER_ROW)
 
 
 def validate_empty_corner(board):
@@ -337,12 +338,13 @@ def validate_empty_corner(board):
 
 
 def rank_score(array, total=1.0):
+    sum_array = sum(array)
     rank_array_indexes = [0, 0, 0, 0]
-    sorted_array = array.copy()
-    sorted_array.sort()
+    if sum_array == 0:
+        return rank_array_indexes
 
     for i in range(4):
-        rank_array_indexes[i] = (total / 4) * (sorted_array.index(array[i]) + 1)
+        rank_array_indexes[i] = (total / sum_array) * (array[i] + 1)
 
     return np.array(rank_array_indexes)
 
@@ -386,4 +388,4 @@ def board_equals(board, newboard):
 
 
 if __name__ == '__main__':
-    print(rank_score([1, 2, 1, 1]))
+    print(rank_score([0, 0, 0, 0]))
