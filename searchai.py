@@ -1,11 +1,16 @@
-import random
-import game
 import sys
+from copy import deepcopy
+
+import numpy as np
+
+import game
+
 
 # Author:      chrn (original by nneonneo)
 # Date:        11.11.2016
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
+
 
 def find_best_move(board):
     """
@@ -13,8 +18,8 @@ def find_best_move(board):
     """
     bestmove = -1
     UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
-    move_args = [UP,DOWN,LEFT,RIGHT]
-    
+    move_args = [UP, DOWN, LEFT, RIGHT]
+
     result = [score_toplevel_move(i, board) for i in range(len(move_args))]
     bestmove = result.index(max(result))
 
@@ -22,26 +27,60 @@ def find_best_move(board):
         print("move: %d score: %.4f" % (m, result[m]))
 
     return bestmove
-    
+
+
 def score_toplevel_move(move, board):
     """
     Entry Point to score the first move.
     """
     newboard = execute_move(move, board)
 
-    if board_equals(board,newboard):
+    if board_equals(board, newboard):
         return 0
-	# TODO:
-	# Implement the Expectimax Algorithm.
-	# 1.) Start the recursion until it reach a certain depth
-	# 2.) When you don't reach the last depth, get all possible board states and 
-	#		calculate their scores dependence of the probability this will occur. (recursively)
-	# 3.) When you reach the leaf calculate the board score with your heuristic.
-    return random.randint(1,1000)
+
+    empty_fields = 16 - np.count_nonzero(newboard)
+    if empty_fields > 7:
+        return expectimax(newboard, 0)
+    if empty_fields > 3:
+        return expectimax(newboard, 1)
+    if empty_fields > 1:
+        return expectimax(newboard, 2)
+    return expectimax(newboard, 3)
+
+
+def all_spawns(board, tile):
+    spawns = []
+    for x in range(4):
+        for y in range(4):
+            if board[x][y] != 0:
+                continue
+            spawn_board = deepcopy(board)
+            spawn_board[x][y] = tile
+            spawns.append(spawn_board)
+    return spawns
+
+
+def expectimax(board, depth):
+    if depth == 0:
+        from heuristicai_much_better import merge_score_short
+        return merge_score_short(board)
+    score_sum = 0
+    for tile, possibility in {2: 0.1, 4: 0.9}.items():
+        for spawn in all_spawns(board, tile):
+            move_score = [0, 0, 0, 0]
+            for direction in range(4):
+                moved_spawn = execute_move(direction, spawn)
+                if board_equals(moved_spawn, spawn):
+                    continue
+                move_score[direction] = expectimax(moved_spawn, depth - 1)
+            score = max(move_score)
+            score_sum += possibility * score
+    return score_sum / (16 - np.count_nonzero(board))
+
 
 def execute_move(move, board):
     """
-    move and return the grid without a new random tile 
+    move and return the grid without a new random tile
 	It won't affect the state of the game in the browser.
     """
 
@@ -57,9 +96,10 @@ def execute_move(move, board):
         return game.merge_right(board)
     else:
         sys.exit("No valid move")
-        
+
+
 def board_equals(board, newboard):
     """
     Check if two boards are equal
     """
-    return  (newboard == board).all()  
+    return (newboard == board).all()

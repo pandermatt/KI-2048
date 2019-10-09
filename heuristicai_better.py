@@ -70,9 +70,8 @@ def find_best_move_with_rating(board):
         #     writer.writerow(add_rating)
         rating = merge_rating(rating, add_rating)
 
-    if rating.index(max(rating)) == 3:
-        print(rating)
-    return rating.index(max(rating))
+    return max(rating)
+    # return rating.index(max(rating))
 
 
 def merge_rating(main, merge):

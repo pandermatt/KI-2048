@@ -12,9 +12,10 @@
 
 import time
 
-import heuristicai_better as ai  # for task 4
-
-# import searchai as ai #for task 5
+# import heuristicai_better as ai  # for task 4
+# import heuristicai_much_better as ai  # for task 4
+#
+import searchai as ai #for task 5
 # import heuristicai_SOLUTION as ai #for task 4
 # import searchai_SOLUTION as ai #for task 5
 
@@ -125,7 +126,7 @@ def main(argv):
     high_score = 0
     sum_tile = 0
     sum_score = 0
-    iterations = 50
+    iterations = 5
     for i in range(iterations):
         game = play_game(gamectrl)
         score_list.append(game)
