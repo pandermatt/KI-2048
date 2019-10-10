@@ -132,6 +132,7 @@ def main(argv):
     iterations = 3
     for i in range(iterations):
         board, game = play_game(gamectrl)
+        score_list.append(game)
         with open("score.txt", "a") as myfile:
             myfile.write("Score %d \n" % game.final_score)
             myfile.write("Tile %d \n" % game.maxval)
