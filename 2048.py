@@ -77,7 +77,7 @@ def play_game(gamectrl):
     board = gamectrl.get_board()
     maxval = max(max(row) for row in to_val(board))
     print("Game over. Final score %d; highest tile %d." % (score, maxval))
-    return Scores(score, maxval)
+    return board, Scores(score, maxval)
 
 
 def parse_args(argv):
@@ -129,10 +129,16 @@ def main(argv):
     high_score = 0
     sum_tile = 0
     sum_score = 0
-    iterations = 25
+    iterations = 3
     for i in range(iterations):
-        game = play_game(gamectrl)
-        score_list.append(game)
+        board, game = play_game(gamectrl)
+        with open("score.txt", "a") as myfile:
+            myfile.write("Score %d \n" % game.final_score)
+            myfile.write("Tile %d \n" % game.maxval)
+            myfile.write("Board:\n")
+            myfile.write(str(board))
+            myfile.write("\n --------------\n")
+            myfile.close()
         if high_score < game.final_score:
             high_score = game.final_score
         time.sleep(0.3)
