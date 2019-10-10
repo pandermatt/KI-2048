@@ -8,7 +8,7 @@ import game
 # Date:        11.11.2016
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
-from heuristicai_better import check_snake_square
+from heuristicai import check_snake_square
 
 
 def find_best_move(board):

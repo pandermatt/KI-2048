@@ -12,8 +12,7 @@
 
 import time
 
-# import heuristicai_better as ai  # for task 4
-# import heuristicai_much_better as ai  # for task 4
+# import heuristicai as ai  # for task 4
 #
 import searchai as ai #for task 5
 # import heuristicai_SOLUTION as ai #for task 4

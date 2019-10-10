@@ -1,4 +1,4 @@
-from heuristicai_better import check_snake, check_border, check_empty_fields, check_biggest_number, check_smoothness, \
+from heuristicai import check_snake, check_border, check_empty_fields, check_biggest_number, check_smoothness, \
     check_total_occurrence, check_count_occurrence, check_mean_occurrence, check_snake_look_ahead, board_equals, \
     execute_move
 

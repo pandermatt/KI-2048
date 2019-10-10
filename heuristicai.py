@@ -1,186 +1,138 @@
-import random
 import sys
 
 import numpy as np
 
 import game
+
 # Author:				chrn (original by nneonneo)
 # Date:				11.11.2016
 # Description:			The logic of the AI to beat the game.
 
 UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
-previous_board = None
-next_move = None
-stuck_counter = 0
+
+border_score = [[3, 1, 1, 3],
+                [1, 0, 0, 1],
+                [1, 0, 0, 1],
+                [3, 1, 1, 3]]
+
+smoothness_score = [[3, 2, 1, 0],
+                    [3, 2, 1, 0],
+                    [3, 2, 1, 0],
+                    [3, 2, 1, 0]]
+
+smoothness_scores = [
+    np.array(smoothness_score),
+    np.flip(smoothness_score),
+    np.transpose(smoothness_score),
+    np.transpose(np.flip(smoothness_score))
+]
+
+snake_score = [[15, 14, 13, 12],
+               [11, 10, 9, 8],
+               [7, 6, 5, 4],
+               [3, 2, 1, 0]]
+
+snake_scores = [
+    16 - np.transpose(np.flip(snake_score)),
+    16 - np.transpose(snake_score),
+    16 - np.flip(snake_score),
+    16 - np.array(snake_score),
+    np.array(snake_score),
+    np.flip(snake_score),
+    np.transpose(snake_score),
+    np.transpose(np.flip(snake_score))
+]
 
 
 def find_best_move(board):
-    bestmove = -1
+    best_score = -np.inf
+    best_move = -1
 
-    # TODO:
-    # Build a heuristic agent on your own that is much better than the random agent.
-    # Your own agent don't have to beat the game.
+    from benchmark import _run_benchmark
+    _run_benchmark(board)
 
-    # bestmove = find_best_move_random_agent()
-    # bestmove = find_best_move_check(board)
-    bestmove = best_merge_score(board)
-    # bestmove = mega2(board)
-
-    return bestmove
-
-
-def mega2(board):
-    moves = get_valid_moves(board)
-    maxScore = -np.inf
-    bestmove = -1
-
-    next_board_state_list = get_next_moves(board)
-
-    for move in moves:
-        next_board_state = next_board_state_list[move]
-        next_move = best_merge_score(next_board_state)
-        score = np.sum(get_next_moves(next_board_state)[next_move])
-
-        if score >= maxScore:
-            maxScore = score
-            bestmove = move
-
-    return bestmove
+    for direction in range(4):
+        new_board = execute_move(direction, board)
+        if board_equals(board, new_board):
+            continue
+        new_score = check_score_methods(new_board)
+        if new_score > best_score:
+            best_move = direction
+            best_score = new_score
+    return best_move
 
 
-def mega(board):
-    moves = get_valid_moves(board)
-    maxScore = -np.inf
-    bestmove = -1
+def check_score_methods(board):
+    score_methods = [
+        [check_snake, 1],
+        [check_border, 0.1],
+        [check_empty_fields, 0.1],
+        [check_biggest_number, 0.001],
+        [check_smoothness, 0.01],
+        [check_total_occurrence, 0.01],
+        [check_count_occurrence, 0.1],
+        [check_mean_occurrence, 0.1],
+        [check_snake_look_ahead, 0.8],
+    ]
 
-    next_board_state = get_next_moves(board)
-
-    for move in moves:
-        score = np.sum(next_board_state[move])
-
-        if score >= maxScore:
-            maxScore = score
-            bestmove = move
-
-    return bestmove
-
-
-def get_next_moves(board):
-    return {
-        DOWN: game.merge_down(board),
-        UP: game.merge_up(board),
-        LEFT: game.merge_left(board),
-        RIGHT: game.merge_right(board)
-    }
+    return sum([func[0](board) * func[1] for func in score_methods])
 
 
-def find_best_move_random_agent():
-    return random.choice([UP, DOWN, LEFT, RIGHT])
+def check_snake(board):
+    return max([np.sum(board * i) for i in snake_scores])
 
 
-def get_highest_value_position(board):
-    highest_value = 0
-    x_pos = 0
-    y_pos = 0
-
-    for x in range(4):
-        for y in range(4):
-            if highest_value < board[x][y]:
-                x_pos = x
-                y_pos = y
-                highest_value = board[x][y]
-
-    print(highest_value)
-    return x_pos, y_pos
+def check_snake_square(board):
+    return max([np.sum(board * i * i) for i in snake_scores])
 
 
-def best_merge_score(board):
-    score = {
-        RIGHT: np.count_nonzero(game.merge_right(board)),
-        LEFT: np.count_nonzero(game.merge_left(board)),
-        UP: np.count_nonzero(game.merge_up(board)),
-        DOWN: np.count_nonzero(game.merge_down(board))
-    }
-
-    valid_moves = get_valid_moves(board)
-
-    if min(score, key=score.get) in valid_moves:
-        return min(score, key=score.get)
-    else:
-        return find_best_move_check(board, valid_moves)
+def check_snake_look_ahead(board):
+    return max([check_snake(execute_move(i, board)) for i in range(4)])
 
 
-def find_best_move_check(board, valid_moves):
-    moves = valid_moves
-
-    if UP in moves:
-        return UP
-    if RIGHT in moves:
-        return RIGHT
-
-    if LEFT in moves:
-        board_left = game.merge_left(board)
-        if DOWN in moves:
-            board_down = game.merge_down(board)
-            if np.count_nonzero(board_left) < np.count_nonzero(board_down):
-                return LEFT
-        return LEFT
-
-    return mega(board)
+def check_smoothness(board):
+    return max([np.sum(board * i) for i in smoothness_scores])
 
 
-def get_valid_moves(board):
-    moves = [UP, DOWN, LEFT, RIGHT]
-    if np.array_equal(game.merge_down(board), board):
-        moves.remove(DOWN)
-    if np.array_equal(game.merge_up(board), board):
-        moves.remove(UP)
-    if np.array_equal(game.merge_left(board), board):
-        moves.remove(LEFT)
-    if np.array_equal(game.merge_right(board), board):
-        moves.remove(RIGHT)
-    return moves
+def check_border(board):
+    return np.multiply(board, border_score).sum()
 
 
-def find_best_move_random(board):
-    global previous_board, next_move, stuck_counter
+def check_empty_fields(board):
+    return 16 - np.count_nonzero(board)
 
-    if next_move:
-        move = next_move
-        next_move = None
-        return move
 
-    if np.array_equal(board, previous_board):
-        stuck_counter = stuck_counter + 1
+def check_biggest_number(board):
+    return np.max(board)
 
-    previous_board = board
-    score_tilde = board[0][3]
-    board_is_full = np.count_nonzero(board) == 16
 
-    print(stuck_counter)
+def check_total_occurrence(board):
+    return _check_occurrence_in_row(board)[0] + _check_occurrence_in_row(np.transpose(board))[0]
 
-    if score_tilde == 0:
-        return UP
 
-    if stuck_counter > 1:
-        if stuck_counter > 2:
-            stuck_counter = 0
-            if np.count_nonzero(board[0]) != 4:
-                next_move = RIGHT
-            return LEFT
-        if np.count_nonzero(board[0]) != 4:
-            return UP
-        # if board_is_full:
-        #     return UP
-        # next_move = RIGHT
-        return RIGHT
+def check_count_occurrence(board):
+    return _check_occurrence_in_row(board)[1] + _check_occurrence_in_row(np.transpose(board))[1]
 
-    return UP
-    # if np.count_nonzero(board[0]) < 4:
-    #     if np.count_nonzero(board[1]) == 0:
-    #         return random.choice([UP, RIGHT])
-    #     return random.choice([UP, RIGHT])
-    # return random.choice([UP, RIGHT])
+
+def check_mean_occurrence(board):
+    row_sum, row_count = _check_occurrence_in_row(board)
+    column_sum, column_count = _check_occurrence_in_row(np.transpose(board))
+    if row_count == 0 or column_count == 0:
+        return 0
+    return row_sum / row_count + column_sum / column_count
+
+
+def _check_occurrence_in_row(board):
+    count = 0
+    neighbor_sum = 0
+    for row in board:
+        previous_num = -1
+        for num in row:
+            if num != 0 and previous_num == num:
+                neighbor_sum += num
+                count += 1
+            previous_num = num
+    return [neighbor_sum, count]
 
 
 def execute_move(move, board):
@@ -206,3 +158,7 @@ def board_equals(board, newboard):
     Check if two boards are equal
     """
     return (newboard == board).all()
+
+
+if __name__ == '__main__':
+    print(rank_score([0, 0, 0, 0]))
