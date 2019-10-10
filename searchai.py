@@ -23,8 +23,8 @@ def find_best_move(board):
     result = [score_toplevel_move(i, board) for i in range(len(move_args))]
     bestmove = result.index(max(result))
 
-    for m in move_args:
-        print("move: %d score: %.4f" % (m, result[m]))
+    # for m in move_args:
+    #     print("move: %d score: %.4f" % (m, result[m]))
 
     return bestmove
 
@@ -39,11 +39,11 @@ def score_toplevel_move(move, board):
         return 0
 
     empty_fields = 16 - np.count_nonzero(newboard)
-    if empty_fields > 7:
+    if empty_fields > 9:
         return expectimax(newboard, 0)
-    if empty_fields > 3:
+    if empty_fields > 4:
         return expectimax(newboard, 1)
-    if empty_fields > 1:
+    if empty_fields > 2:
         return expectimax(newboard, 2)
     return expectimax(newboard, 3)
 
