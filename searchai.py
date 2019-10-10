@@ -4,12 +4,11 @@ from copy import deepcopy
 import numpy as np
 
 import game
-
-
 # Author:      chrn (original by nneonneo)
 # Date:        11.11.2016
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
+from heuristicai_better import check_snake_square
 
 
 def find_best_move(board):
@@ -54,7 +53,7 @@ def all_spawns(board, tile):
         for y in range(4):
             if board[x][y] != 0:
                 continue
-            spawn_board = deepcopy(board)
+            spawn_board = np.copy(board)
             spawn_board[x][y] = tile
             spawns.append(spawn_board)
     return spawns
@@ -62,8 +61,7 @@ def all_spawns(board, tile):
 
 def expectimax(board, depth):
     if depth == 0:
-        from heuristicai_much_better import merge_score_short
-        return merge_score_short(board)
+        return check_snake_square(board)
     score_sum = 0
     for tile, possibility in {2: 0.1, 4: 0.9}.items():
         for spawn in all_spawns(board, tile):

@@ -9,356 +9,130 @@ import game
 # Description:			The logic of the AI to beat the game.
 
 UP, DOWN, LEFT, RIGHT = 0, 1, 2, 3
-previous_board = None
-next_move = None
-stuck_counter = 0
 
-FACTOR_EMPTY_FIELDS = 7
-FACTOR_BORDER = 6
-FACTOR_BORDER_ROW = 5
-FACTOR_MERGE_SCORE = 0.9
-FACTOR_MERGE_SCORE_2X = 0.8
-FACTOR_MERGE_SCORE_3X = 0.7
-FACTOR_NEIGHBOURS = 4
-FACTOR_EMPTY_CORNER = 4
-FACTOR_STAY_FULL = 100
+border_score = [[3, 1, 1, 3],
+                [1, 0, 0, 1],
+                [1, 0, 0, 1],
+                [3, 1, 1, 3]]
 
+smoothness_score = [[3, 2, 1, 0],
+                    [3, 2, 1, 0],
+                    [3, 2, 1, 0],
+                    [3, 2, 1, 0]]
 
-# [[8, 32, 16, 8],
-#  [8, 16, 128, 2],
-#  [2, 64, 0, 2],
-#  [0, 0, 0, 0]]
+smoothness_scores = [
+    np.array(smoothness_score),
+    np.flip(smoothness_score),
+    np.transpose(smoothness_score),
+    np.transpose(np.flip(smoothness_score))
+]
+
+snake_score = [[15, 14, 13, 12],
+               [11, 10, 9, 8],
+               [7, 6, 5, 4],
+               [3, 2, 1, 0]]
+
+snake_scores = [
+    16 - np.transpose(np.flip(snake_score)),
+    16 - np.transpose(snake_score),
+    16 - np.flip(snake_score),
+    16 - np.array(snake_score),
+    np.array(snake_score),
+    np.flip(snake_score),
+    np.transpose(snake_score),
+    np.transpose(np.flip(snake_score))
+]
 
 
 def find_best_move(board):
-    bestmove = find_best_move_with_rating(board)
+    best_score = -np.inf
+    best_move = -1
 
-    return bestmove
+    from benchmark import _run_benchmark
+    _run_benchmark(board)
+
+    for direction in range(4):
+        new_board = execute_move(direction, board)
+        if board_equals(board, new_board):
+            continue
+        new_score = check_score_methods(new_board)
+        if new_score > best_score:
+            best_move = direction
+            best_score = new_score
+    return best_move
 
 
-def find_best_move_with_rating(board):
-    # UP, DOWN, LEFT, RIGHT
-    # 1 best -- 0 worst
-    rating = [0, 0, 0, 0]
-
-    rating_methods = [
-        validate_top_row,
-        validate_merge_top_row,
-        validate_merge_second_row,
-        # validate_merge_third_row_row,
-        validate_empty_corner,
-        validate_neighbour,
-        validate_empty_fields,
-        validate_new_board,
-        validate_place_biggest_number,
-        validate_end_row,
-        validate_merge_score,
-        validate_merge_score2x,
-        validate_merge_score3x,
-        validate_rescue_mode,
-        validate_merge_right_up,
-        validate_possible_move
+def check_score_methods(board):
+    score_methods = [
+        [check_snake, 1],
+        [check_border, 0.1],
+        [check_empty_fields, 0.1],
+        [check_biggest_number, 0.001],
+        [check_smoothness, 0.01],
+        [check_total_occurrence, 0.01],
+        [check_count_occurrence, 0.1],
+        [check_mean_occurrence, 0.1],
+        [check_snake_look_ahead, 0.8],
     ]
 
-    for rating_method in rating_methods:
-        add_rating = rating_method(board)
-
-        # import csv
-        # file = r'' + rating_method.__name__ + '.csv'
-        # with open(file, 'a') as f:
-        #     writer = csv.writer(f)
-        #     writer.writerow(add_rating)
-        rating = merge_rating(rating, add_rating)
-
-    return max(rating)
-    # return rating.index(max(rating))
+    return sum([func[0](board) * func[1] for func in score_methods])
 
 
-def merge_rating(main, merge):
-    return [x + y for x, y in zip(main, merge)]
+def check_snake(board):
+    return max([np.sum(board * i) for i in snake_scores])
 
 
-def validate_merge_right_up(board):
-    rating = [0, 0, 0, 0]
-    occupied = np.count_nonzero(board[1])
-    if not is_n_row_full(board, 0):
-        return rating
-
-    new_board = execute_move(UP, execute_move(RIGHT, board))
-
-    if np.count_nonzero(new_board[1]) < occupied and is_n_row_full(new_board, 0):
-        return [5, 0, 0, 10]
-    else:
-        return rating
+def check_snake_square(board):
+    return max([np.sum(board * i * i) for i in snake_scores])
 
 
-def validate_rescue_mode(board):
-    if board[0][0] == 0:
-        return [0, 0, 5, 0]
-    if board[0][0] * board[0][0] < np.max(board):
-        for i in range(1, 3):
-            if board[i][0] in [2, 4, 8]:
-                return [5, 0, 0, 3]
-        return [10, 0, 0, 0]
-    else:
-        return [0, 0, 0, 0]
+def check_snake_look_ahead(board):
+    return max([check_snake(execute_move(i, board)) for i in range(4)])
 
 
-def validate_new_board(board):
-    if np.max(board) < 128:
-        # UP, DOWN, LEFT, RIGHT
-        return [4, -1, 1, -1]
-    return [0, 0, 0, 0]
+def check_smoothness(board):
+    return max([np.sum(board * i) for i in smoothness_scores])
 
 
-def validate_top_row(board):
-    if not is_n_row_full(board, 0):
-        # UP, DOWN, LEFT, RIGHT
-        return [2, -10, 1, -5]
-    return [0, -5, 0, -1]
+def check_border(board):
+    return np.multiply(board, border_score).sum()
 
 
-def check_neighbour(board, x, y, good_merge):
-    value = board[x][y]
-    if value >= good_merge:
-        # UP, DOWN, LEFT, RIGHT
-        try:
-            if value == board[x + 1][y]:
-                return [0, 0, 6, 0]
-        except:
-            pass
-        try:
-            if value == board[x + 1][y + 1]:
-                return [2, 0, 4, 0]
-        except:
-            pass
-        try:
-            if value == board[x][y + 1]:
-                return [4, 0, 0, 0]
-        except:
-            pass
-        try:
-            if value == board[x - 1][y + 1]:
-                return [2, 0, 0, 3]
-        except:
-            pass
-        try:
-            if value == board[x - 1][y]:
-                return [0, 0, 0, 4]
-        except:
-            pass
-        return [0, 0, 0, 0]
-    else:
-        return [0, 0, 0, 0]
+def check_empty_fields(board):
+    return 16 - np.count_nonzero(board)
 
 
-def validate_neighbour(board):
-    good_merge = np.max(board) / 8
-    rating = np.array([0, 0, 0, 0])
-    for x in range(4):
-        rating = merge_rating(rating, check_neighbour(board, 0, x, good_merge))
-    return rank_score(rating, total=FACTOR_NEIGHBOURS)
+def check_biggest_number(board):
+    return np.max(board)
 
 
-def validate_merge_top_row(board):
-    if np.count_nonzero(execute_move(LEFT, board)[0]) < np.count_nonzero(board[0]):
-        # UP, DOWN, LEFT, RIGHT
-        return [0, 0, 10, 0]
-    return [0, 0, 0, 0]
+def check_total_occurrence(board):
+    return _check_occurrence_in_row(board)[0] + _check_occurrence_in_row(np.transpose(board))[0]
 
 
-def validate_top_row_stay_full(board):
-    rating = [0, 0, 0, 0]
-    for i in range(4):
-        new_board = execute_move(i, board)
-        if np.count_nonzero(new_board[0]) == 4:
-            rating[i] = FACTOR_STAY_FULL
-    return rating
+def check_count_occurrence(board):
+    return _check_occurrence_in_row(board)[1] + _check_occurrence_in_row(np.transpose(board))[1]
 
 
-def validate_merge_second_row(board):
-    rating = [0, 0, 0, 0]
-    occupied = np.count_nonzero(board)
-    if not is_n_row_full(board, 0):
-        return rating
-    for i in range(4):
-        new_board = execute_move(i, board)
-        rating[i] = occupied - np.count_nonzero(new_board)
-        for j in range(4):
-            new2_board = execute_move(i, new_board)
-            rating[i] = occupied - np.count_nonzero(new2_board)
-            for k in range(4):
-                new3_board = execute_move(i, new2_board)
-                rating[i] = occupied - np.count_nonzero(new3_board)
-    return rank_score(rating, total=5)
+def check_mean_occurrence(board):
+    row_sum, row_count = _check_occurrence_in_row(board)
+    column_sum, column_count = _check_occurrence_in_row(np.transpose(board))
+    if row_count == 0 or column_count == 0:
+        return 0
+    return row_sum / row_count + column_sum / column_count
 
 
-def validate_merge_third_row_row(board):
-    if is_n_row_full(board, 0) and is_n_row_full(board, 1) and \
-            np.count_nonzero(execute_move(LEFT, board)[1]) < np.count_nonzero(board[1]):
-        # UP, DOWN, LEFT, RIGHT
-        return [0, 0, 2, 0]
-    return [0, 0, 0, 0]
-
-
-def is_n_row_full(board, n):
-    return np.count_nonzero(board[n]) == 4
-
-
-def validate_possible_move(board):
-    rating = [0, 0, 0, 0]
-    for i in range(4):
-        if board_equals(board, execute_move(i, board)):
-            rating[i] = -np.Inf
-    return rating
-
-
-def validate_merge_score(board):
-    max_nr = np.max(board)
-
-    rating = [0, 0, 0, 0]
-
-    new_max = [
-        np.max(execute_move(UP, board)),
-        np.max(execute_move(DOWN, board)),
-        np.max(execute_move(LEFT, board)),
-        np.max(execute_move(RIGHT, board))
-    ]
-    for i in range(4):
-        if new_max[i] > max_nr:
-            rating[i] = 1 * FACTOR_MERGE_SCORE
-    return rating
-
-
-def validate_merge_score2x(board):
-    max_nr = np.max(board)
-    rating = [0, 0, 0, 0]
-    new_max = [0, 0, 0, 0]
-
-    new_boards = [
-        execute_move(UP, board),
-        execute_move(DOWN, board),
-        execute_move(LEFT, board),
-        execute_move(RIGHT, board)
-    ]
-
-    for i in range(4):
-        new_maxs = [
-            np.max(execute_move(UP, new_boards[i])),
-            np.max(execute_move(DOWN, new_boards[i])),
-            np.max(execute_move(LEFT, new_boards[i])),
-            np.max(execute_move(RIGHT, new_boards[i]))
-        ]
-        new_max[i] = np.max(new_maxs)
-
-    for i in range(4):
-        if new_max[i] > max_nr:
-            rating[i] = 1 * FACTOR_MERGE_SCORE_2X
-    return rating
-
-
-def validate_merge_score3x(board):
-    max_nr = np.max(board)
-    rating = [0, 0, 0, 0]
-    new_max2x = [0, 0, 0, 0]
-    new_max = [0, 0, 0, 0]
-
-    new_boards = [
-        execute_move(UP, board),
-        execute_move(DOWN, board),
-        execute_move(LEFT, board),
-        execute_move(RIGHT, board)
-    ]
-
-    for i in range(4):
-        new_maxs = [
-            execute_move(UP, new_boards[i]),
-            execute_move(DOWN, new_boards[i]),
-            execute_move(LEFT, new_boards[i]),
-            execute_move(RIGHT, new_boards[i])
-        ]
-
-        for j in range(4):
-            new_maxs2x = [
-                np.max(execute_move(UP, new_maxs[j])),
-                np.max(execute_move(DOWN, new_maxs[j])),
-                np.max(execute_move(LEFT, new_maxs[j])),
-                np.max(execute_move(RIGHT, new_maxs[j]))
-            ]
-            new_max2x[j] = np.max(new_maxs2x)
-        new_max[i] = np.max(new_max2x)
-        new_max2x = [0, 0, 0, 0]
-
-    for i in range(4):
-        if new_max[i] > np.max(max_nr):
-            rating[i] = 1 * FACTOR_MERGE_SCORE_3X
-    return rating
-
-
-def validate_empty_fields(board):
-    return rank_score((16 - np.array([
-        np.count_nonzero(execute_move(UP, board)),
-        np.count_nonzero(execute_move(DOWN, board)),
-        np.count_nonzero(execute_move(LEFT, board)),
-        np.count_nonzero(execute_move(RIGHT, board))
-    ])).tolist(), total=FACTOR_EMPTY_FIELDS)
-
-
-def validate_place_biggest_number(board):
-    np_board = np.array(board)
-
-    # UP, DOWN, LEFT, RIGHT
-    return rank_score([
-        np_board[0, np.argmax(np_board[0, :])],
-        np_board[3, np.argmax(np_board[3, :])],
-        np_board[np.argmax(np_board[:, 0]), 0],
-        np_board[np.argmax(np_board[:, 3]), 3]
-    ], total=FACTOR_BORDER)
-
-
-def validate_end_row(board):
-    np_board = np.array(board)
-
-    # UP, DOWN, LEFT, RIGHT
-    return rank_score([
-        sum(np_board[0, :]),
-        sum(np_board[3, :]),
-        sum(np_board[:, 0]),
-        sum(np_board[:, 3])
-    ], total=FACTOR_BORDER_ROW)
-
-
-def validate_empty_corner(board):
-    rating = [0, 0, 0, 0]
-    for i in range(4):
-        if execute_move(i, board)[3][3] == 0:
-            rating[i] = 1 * FACTOR_EMPTY_CORNER
-    return rating
-
-
-def rank_score(array, total=1.0):
-    sum_array = sum(array)
-    rank_array_indexes = [0, 0, 0, 0]
-    if sum_array == 0:
-        return rank_array_indexes
-
-    for i in range(4):
-        rank_array_indexes[i] = (total / sum_array) * (array[i] + 1)
-
-    return np.array(rank_array_indexes)
-
-
-def get_valid_moves(board):
-    moves = [UP, DOWN, LEFT, RIGHT]
-    if np.array_equal(game.merge_down(board), board):
-        moves.remove(DOWN)
-    if np.array_equal(game.merge_up(board), board):
-        moves.remove(UP)
-    if np.array_equal(game.merge_left(board), board):
-        moves.remove(LEFT)
-    if np.array_equal(game.merge_right(board), board):
-        moves.remove(RIGHT)
-    return moves
+def _check_occurrence_in_row(board):
+    count = 0
+    neighbor_sum = 0
+    for row in board:
+        previous_num = -1
+        for num in row:
+            if num != 0 and previous_num == num:
+                neighbor_sum += num
+                count += 1
+            previous_num = num
+    return [neighbor_sum, count]
 
 
 def execute_move(move, board):

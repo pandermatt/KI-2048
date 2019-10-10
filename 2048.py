@@ -59,6 +59,8 @@ def play_game(gamectrl):
     while 1:
         state = gamectrl.get_status()
         if state == 'ended':
+            # from subprocess import call
+            # call(["screencapture", str(time.time()) + ".jpg"])
             break
         elif state == 'won':
             time.sleep(0.75)
@@ -69,7 +71,7 @@ def play_game(gamectrl):
         move = find_best_move(board)
         if move < 0:
             break
-        print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
+        # print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
         gamectrl.execute_move(move)
 
     score = gamectrl.get_score()
@@ -109,15 +111,17 @@ def main(argv):
             args.port = 9222
         ctrl = ChromeDebuggerControl(args.port)
 
-    if args.ctrlmode == 'keyboard':
-        from gamectrl import Keyboard2048Control
-        gamectrl = Keyboard2048Control(ctrl)
-    elif args.ctrlmode == 'fast':
-        from gamectrl import Fast2048Control
-        gamectrl = Fast2048Control(ctrl)
-    elif args.ctrlmode == 'hybrid':
-        from gamectrl import Hybrid2048Control
-        gamectrl = Hybrid2048Control(ctrl)
+    # if args.ctrlmode == 'keyboard':
+    #     from gamectrl import Keyboard2048Control
+    #     gamectrl = Keyboard2048Control(ctrl)
+    # elif args.ctrlmode == 'fast':
+    #     from gamectrl import Fast2048Control
+    #     gamectrl = Fast2048Control(ctrl)
+    # elif args.ctrlmode == 'hybrid':
+    #     from gamectrl import Hybrid2048Control
+    #     gamectrl = Hybrid2048Control(ctrl)
+    from gamectrl import Fast2048Control
+    gamectrl = Fast2048Control(ctrl)
 
     if gamectrl.get_status() == 'ended':
         gamectrl.restart_game()
@@ -126,12 +130,13 @@ def main(argv):
     high_score = 0
     sum_tile = 0
     sum_score = 0
-    iterations = 5
+    iterations = 1
     for i in range(iterations):
         game = play_game(gamectrl)
         score_list.append(game)
         if high_score < game.final_score:
             high_score = game.final_score
+        time.sleep(0.3)
         gamectrl.restart_game()
     for score in score_list:
         sum_tile = sum_tile + score.maxval

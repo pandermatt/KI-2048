@@ -4,6 +4,7 @@ from math import pi
 import matplotlib.pyplot as plt
 import pandas as pd
 
+total_overall = 0
 
 def plot_me(file_name, id=0):
     # Set data
@@ -39,7 +40,7 @@ def plot_me(file_name, id=0):
     # Draw ylabels
     # ax.set_rlabel_position(0)
     # plt.yticks([10, 20, 30], ["10", "20", "30"], color="grey", size=7)
-    # plt.ylim(0, 40)
+    # plt.ylim(0, total_overall/2)
 
     # Plot data
     ax.plot(angles, values, linewidth=1, linestyle='solid')
@@ -50,12 +51,23 @@ def plot_me(file_name, id=0):
     plt.savefig(file_name + '.png')
 
 
+def total(file_name):
+    # Set data
+    data = pd.read_csv(r'' + file_name, names=['UP', 'DOWN', 'LEFT', 'RIGHT'], header=None)
+    max_sum = max([data['RIGHT'].sum(), data['UP'].sum(), data['LEFT'].sum(), data['DOWN'].sum()])
+    global total_overall
+    if total_overall < max_sum:
+        total_overall = max_sum
+
+
+
 if __name__ == '__main__':
     import glob
 
     path = "*.csv"
     i = 0
-    # plot_me('validate_top_row.csv')
+    # for fname in glob.glob(path):
+    #     total(fname)
     for fname in glob.glob(path):
         plot_me(fname, id=i)
-        i = i+1
+        i = i + 1
