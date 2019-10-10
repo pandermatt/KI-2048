@@ -27,10 +27,12 @@ smoothness_scores = [
     np.transpose(np.flip(smoothness_score))
 ]
 
-snake_score = [[15, 14, 13, 12],
-               [11, 10, 9, 8],
-               [7, 6, 5, 4],
-               [3, 2, 1, 0]]
+snake_score_base = [[15, 14, 13, 12],
+                    [8, 9, 10, 11],
+                    [7, 6, 5, 4],
+                    [0, 1, 2, 3]]
+
+snake_score = np.array([[2 for i in range(4)] for j in range(4)]) ** snake_score_base
 
 snake_scores = [
     16 - np.transpose(np.flip(snake_score)),
