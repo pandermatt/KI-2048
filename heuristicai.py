@@ -158,7 +158,3 @@ def board_equals(board, newboard):
     Check if two boards are equal
     """
     return (newboard == board).all()
-
-
-if __name__ == '__main__':
-    print(rank_score([0, 0, 0, 0]))
