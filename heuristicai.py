@@ -45,6 +45,17 @@ snake_scores = [
     np.transpose(np.flip(snake_score))
 ]
 
+snake_scores_ai = [
+    16 - np.transpose(np.flip(snake_score_base)),
+    16 - np.transpose(snake_score_base),
+    16 - np.flip(snake_score_base),
+    16 - np.array(snake_score_base),
+    np.array(snake_score_base),
+    np.flip(snake_score_base),
+    np.transpose(snake_score_base),
+    np.transpose(np.flip(snake_score_base))
+]
+
 
 def find_best_move(board):
     best_score = -np.inf
@@ -84,8 +95,8 @@ def check_snake(board):
     return max([np.sum(board * i) for i in snake_scores])
 
 
-# def check_snake_square(board):
-#     return max([np.sum(board * i * i) for i in snake_scores])
+def check_snake_square(board):
+    return max([np.sum(board * i * i) for i in snake_scores_ai])
 
 
 def check_snake_look_ahead(board):
