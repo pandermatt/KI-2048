@@ -129,7 +129,7 @@ def main(argv):
     high_score = 0
     sum_tile = 0
     sum_score = 0
-    iterations = 3
+    iterations = 20
     for i in range(iterations):
         board, game = play_game(gamectrl)
         score_list.append(game)

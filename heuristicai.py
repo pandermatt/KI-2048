@@ -84,8 +84,8 @@ def check_snake(board):
     return max([np.sum(board * i) for i in snake_scores])
 
 
-def check_snake_square(board):
-    return max([np.sum(board * i * i) for i in snake_scores])
+# def check_snake_square(board):
+#     return max([np.sum(board * i * i) for i in snake_scores])
 
 
 def check_snake_look_ahead(board):
