@@ -7,7 +7,7 @@ import game
 # Date:        11.11.2016
 # Copyright:   Algorithm from https://github.com/nneonneo/2048-ai
 # Description: The logic to beat the game. Based on expectimax algorithm.
-from heuristicai import check_snake_square
+from heuristicai import check_snake
 
 
 def find_best_move(board):
@@ -39,19 +39,17 @@ def score_toplevel_move(move, board):
     empty_fields = 16 - np.count_nonzero(newboard)
 
     if np.max(board) < 4000:
-        if empty_fields <= 3:
+        if empty_fields <= 4:
             return expectimax(newboard, 2)
         return expectimax(newboard, 1)
 
-    if empty_fields > 9:
-        return expectimax(newboard, 0)
+    # if empty_fields > 9:
+    #     return expectimax(newboard, 0)
+    # if empty_fields > 4:
+    #     return expectimax(newboard, 1)
     if empty_fields > 4:
-        return expectimax(newboard, 1)
-    if empty_fields > 2:
         return expectimax(newboard, 2)
-    if empty_fields > 0:
-        return expectimax(newboard, 3)
-    return expectimax(newboard, 4)
+    return expectimax(newboard, 3)
 
 
 def all_spawns(board, tile):
@@ -68,7 +66,7 @@ def all_spawns(board, tile):
 
 def expectimax(board, depth):
     if depth == 0:
-        return check_snake_square(board)
+        return check_snake(board)
     score_sum = 0
     for tile, possibility in {2: 0.1, 4: 0.9}.items():
         for spawn in all_spawns(board, tile):
