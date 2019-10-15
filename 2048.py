@@ -12,9 +12,9 @@
 
 import time
 
-#import heuristicai as ai  # for task 4
+import heuristicai as ai  # for task 4
 #
-import searchai as ai #for task 5
+#import searchai as ai #for task 5
 # import heuristicai_SOLUTION as ai #for task 4
 # import searchai_SOLUTION as ai #for task 5
 
@@ -77,8 +77,8 @@ def play_game(gamectrl):
     board = gamectrl.get_board()
     maxval = max(max(row) for row in to_val(board))
     end = time.time()
-    avgtime = (start-end)/moveno
-    print("Game over. Final score %d; highest tile %d. Average Time: %d" % (score, maxval, avgtime))
+    avgtime = 1.0*(start-end)/moveno
+    print(f'Game over. Final score {score}; highest tile {maxval}. Average Time: {avgtime}')
     return board, Scores(score, maxval)
 
 
@@ -131,7 +131,7 @@ def main(argv):
     high_score = 0
     sum_tile = 0
     sum_score = 0
-    iterations = 20
+    iterations = 10
     for i in range(iterations):
         board, game = play_game(gamectrl)
         score_list.append(game)
