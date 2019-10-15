@@ -77,7 +77,7 @@ def play_game(gamectrl):
     board = gamectrl.get_board()
     maxval = max(max(row) for row in to_val(board))
     end = time.time()
-    avgtime = 1.0*(start-end)/moveno
+    avgtime = 1.0*(end-start)/moveno
     print(f'Game over. Final score {score}; highest tile {maxval}. Average Time: {avgtime}')
     return board, Scores(score, maxval)
 
