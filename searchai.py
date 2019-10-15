@@ -38,17 +38,17 @@ def score_toplevel_move(move, board):
 
     empty_fields = 16 - np.count_nonzero(newboard)
 
-    if np.max(board) < 4000:
-        if empty_fields <= 4:
-            return expectimax(newboard, 2)
-        return expectimax(newboard, 1)
-
+    # if np.max(board) < 4000:
+    #     if empty_fields <= 4:
+    #         return expectimax(newboard, 2)
+    #     return expectimax(newboard, 1)
+    #
     # if empty_fields > 9:
     #     return expectimax(newboard, 0)
-    # if empty_fields > 4:
+    # if empty_fields > 5:
     #     return expectimax(newboard, 1)
-    if empty_fields > 4:
-        return expectimax(newboard, 2)
+    # if empty_fields > 3:
+    #     return expectimax(newboard, 2)
     return expectimax(newboard, 3)
 
 

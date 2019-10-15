@@ -12,9 +12,8 @@
 
 import time
 
-import heuristicai as ai  # for task 4
-#
-#import searchai as ai #for task 5
+#import heuristicai as ai  # for task 4
+import searchai as ai #for task 5
 # import heuristicai_SOLUTION as ai #for task 4
 # import searchai_SOLUTION as ai #for task 5
 
@@ -70,7 +69,7 @@ def play_game(gamectrl):
         move = find_best_move(board)
         if move < 0:
             break
-        # print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
+        print("%010.6f: Score %d, Move %d: %s" % (time.time() - start, gamectrl.get_score(), moveno, movename(move)))
         gamectrl.execute_move(move)
 
     score = gamectrl.get_score()
